@@ -39,7 +39,9 @@ let state = {
     activeSet: [],
     hitId: null,
     easyTimeTaken: 0,
-    hardTimeTaken: 0
+    hardTimeTaken: 0,
+    isCountingDown: false,
+    countdownValue: 5
 };
 
 let gameTimer = null;
@@ -48,13 +50,11 @@ let targetSwitcher = null;
 /**
  * SPEECH SYNTHESIS
  * Function to announce the flavor name out loud.
- * Added a small timeout after cancel to fix stuttering/overlapping issues.
  */
 function announce(name) {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     
-    // Timeout prevents the voice engine from "tripping" over the previous cancel call
     setTimeout(() => {
         const utterance = new SpeechSynthesisUtterance(name);
         utterance.rate = 1.1;
@@ -117,9 +117,6 @@ function showInstructions() {
     render();
 }
 
-/**
- * Helper to pick a target that is different from the current one to ensure randomness.
- */
 function pickUniqueTarget() {
     let next;
     do {
@@ -128,17 +125,41 @@ function pickUniqueTarget() {
     return next;
 }
 
+/**
+ * Executes a 5-second countdown before the round starts.
+ */
+function runCountdown(callback) {
+    state.isCountingDown = true;
+    state.countdownValue = 5;
+    render();
+
+    const interval = setInterval(() => {
+        state.countdownValue--;
+        if (state.countdownValue < 0) {
+            clearInterval(interval);
+            setTimeout(() => {
+                state.isCountingDown = false;
+                callback();
+                render();
+            }, 800);
+        }
+        render();
+    }, 1000);
+}
+
 function startGame() {
     const count = state.difficulty === 'easy' ? 9 : 12;
     state.activeSet = [...FLAVORS].sort(() => 0.5 - Math.random()).slice(0, count);
     state.score = 0;
     state.timeLeft = 20;
     state.view = 'play';
-    state.target = state.activeSet[Math.floor(Math.random() * state.activeSet.length)];
-    
-    announce(state.target.name);
-    startTimers();
-    render();
+    state.target = null; // No target during countdown
+
+    runCountdown(() => {
+        state.target = pickUniqueTarget();
+        announce(state.target.name);
+        startTimers();
+    });
 }
 
 function startNextRound() {
@@ -152,7 +173,7 @@ function showCertificate() {
 }
 
 function handleCanTap(flavorId) {
-    if (state.view !== 'play') return;
+    if (state.view !== 'play' || state.isCountingDown) return;
     
     if (flavorId === state.target.id) {
         state.hitId = flavorId;
@@ -166,7 +187,6 @@ function handleCanTap(flavorId) {
             state.view = 'win';
             render();
         } else {
-            // Reset switcher timer to prevent immediate overlap after a correct tap
             resetTargetSwitcher();
             state.target = pickUniqueTarget();
             announce(state.target.name);
@@ -193,9 +213,6 @@ function startTimers() {
     resetTargetSwitcher();
 }
 
-/**
- * Resets the automatic flavor switcher so it restarts its countdown whenever a flavor is called.
- */
 function resetTargetSwitcher() {
     if (targetSwitcher) clearInterval(targetSwitcher);
     const pace = state.difficulty === 'easy' ? 3000 : 2000;
@@ -213,11 +230,10 @@ function stopTimers() {
 
 /**
  * RENDERER
- * The main engine that draws the screens based on current state.
  */
 function render() {
     const root = document.getElementById('root');
-    const { view, difficulty, score, timeLeft, target, activeSet, hitId, easyTimeTaken, hardTimeTaken } = state;
+    const { view, difficulty, score, timeLeft, target, activeSet, hitId, easyTimeTaken, hardTimeTaken, isCountingDown, countdownValue } = state;
 
     /**
      * --- PAGE: HOME ---
@@ -339,8 +355,15 @@ function render() {
             </div>
           </div>
           <div style="height:220px; display:flex; flex-direction:column; justify-content:center; text-align:center;">
-            <div style="font-size:24px; opacity:0.4; letter-spacing:0.3em; font-weight:600;">LISTENING FOR...</div>
-            <div style="font-size:100px; font-weight:900; color:#ff5b3a; font-style:italic; font-family:'Fraunces', serif;">"${target?.name.toUpperCase()}"</div>
+            ${isCountingDown ? `
+              <div style="font-size:24px; opacity:0.4; letter-spacing:0.3em; font-weight:600;">GET READY...</div>
+              <div style="font-size:140px; font-weight:900; color:#ff5b3a; font-style:italic; font-family:'Fraunces', serif;">
+                ${countdownValue > 0 ? countdownValue : 'GO!'}
+              </div>
+            ` : `
+              <div style="font-size:24px; opacity:0.4; letter-spacing:0.3em; font-weight:600;">LISTENING FOR...</div>
+              <div style="font-size:100px; font-weight:900; color:#ff5b3a; font-style:italic; font-family:'Fraunces', serif;">"${target?.name.toUpperCase()}"</div>
+            `}
           </div>
           <div style="flex:1; display:grid; grid-template-columns:repeat(3, 1fr); gap:${difficulty === 'easy' ? 40 : 20}px; align-content:center; justify-items:center;">
             ${activeSet.map(f => getCanHTML(f, difficulty === 'easy' ? 190 : 140, 0, target?.id === f.id, hitId === f.id)).join('')}
