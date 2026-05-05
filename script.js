@@ -38,6 +38,7 @@ let state = {
     target: null,
     activeSet: [],
     hitId: null,
+    shakeId: null,
     easyTimeTaken: 0,
     hardTimeTaken: 0,
     isCountingDown: false,
@@ -48,9 +49,50 @@ let gameTimer = null;
 let targetSwitcher = null;
 
 /**
- * SPEECH SYNTHESIS
- * Function to announce the flavor name out loud.
+ * AUDIO SYNTHESIS (Offline Ready)
  */
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playTone(freq, type, duration, volume) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration);
+}
+
+function playMenuSound() {
+    playTone(600, 'triangle', 0.1, 0.05);
+}
+
+function playCelebrateSound() {
+    // A quick synthesized fanfare: C5, E5, G5, C6
+    const notes = [523.25, 659.25, 783.99, 1046.50];
+    notes.forEach((freq, i) => {
+        setTimeout(() => playTone(freq, 'sine', 0.5, 0.08), i * 100);
+    });
+}
+
+function playCorrectSound() {
+    playTone(880, 'sine', 0.2, 0.1);
+    setTimeout(() => playTone(1100, 'sine', 0.3, 0.1), 50);
+}
+
+function playWrongSound() {
+    playTone(120, 'sawtooth', 0.3, 0.1);
+}
+
+function playCountdownBlip(val) {
+    const freq = val === 0 ? 880 : 220 + (5 - val) * 60;
+    playTone(freq, val === 0 ? 'sine' : 'triangle', val === 0 ? 0.5 : 0.2, 0.1);
+}
+
 function announce(name) {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
@@ -80,15 +122,16 @@ function getConfettiHTML() {
     return html;
 }
 
-function getCanHTML(flavor, width = 150, tilt = 0, glow = false, isActive = false) {
+function getCanHTML(flavor, width = 150, tilt = 0, glow = false, isActive = false, isShaking = false) {
     const f = flavor;
     const height = width * 2.4;
     const activeScale = isActive ? 'scale(0.92)' : 'scale(1)';
+    const shakeAnim = isShaking ? 'animation: can-shake 0.3s ease-in-out;' : '';
 
     return `
     <button
       onclick="handleCanTap('${f.id}')"
-      style="width:${width}px; height:${height}px; background:transparent; padding:0; transform:rotate(${tilt}deg) ${activeScale}; position:relative; border:none; outline:none; cursor:pointer;"
+      style="width:${width}px; height:${height}px; background:transparent; padding:0; transform:rotate(${tilt}deg) ${activeScale}; position:relative; border:none; outline:none; cursor:pointer; ${shakeAnim}"
     >
       <div style="position:absolute; left:${width*0.04}px; right:${width*0.04}px; top:0; height:${width*0.1}px; background:linear-gradient(180deg, #c8ccd1 0%, #e8ebee 30%, #8e9398 60%, #b3b8bd 100%); border-radius:${width*0.5}px / ${width*0.07}px"></div>
       <div style="position:absolute; left:0; right:0; top:${width*0.1}px; height:${width*0.05}px; background:linear-gradient(180deg, ${f.dark} 0%, ${f.accent} 100%); border-radius:50% / 100%"></div>
@@ -113,6 +156,7 @@ function getCanHTML(flavor, width = 150, tilt = 0, glow = false, isActive = fals
  * Controls for starting games, handling taps, and timers.
  */
 function showInstructions() {
+    playMenuSound();
     state.view = 'instructions';
     render();
 }
@@ -131,10 +175,14 @@ function pickUniqueTarget() {
 function runCountdown(callback) {
     state.isCountingDown = true;
     state.countdownValue = 5;
+    playCountdownBlip(5);
     render();
 
     const interval = setInterval(() => {
         state.countdownValue--;
+        if (state.countdownValue >= 0) {
+            playCountdownBlip(state.countdownValue);
+        }
         if (state.countdownValue < 0) {
             clearInterval(interval);
             setTimeout(() => {
@@ -148,6 +196,7 @@ function runCountdown(callback) {
 }
 
 function startGame() {
+    playMenuSound();
     const count = state.difficulty === 'easy' ? 9 : 12;
     state.activeSet = [...FLAVORS].sort(() => 0.5 - Math.random()).slice(0, count);
     state.score = 0;
@@ -163,11 +212,14 @@ function startGame() {
 }
 
 function startNextRound() {
+    playMenuSound();
     state.difficulty = 'hard';
     startGame();
 }
 
 function showCertificate() {
+    playCelebrateSound();
+    state.certificateId = Math.floor(1000 + Math.random() * 9000);
     state.view = 'certificate';
     render();
 }
@@ -176,6 +228,7 @@ function handleCanTap(flavorId) {
     if (state.view !== 'play' || state.isCountingDown) return;
     
     if (flavorId === state.target.id) {
+        playCorrectSound();
         state.hitId = flavorId;
         state.score += 1;
         
@@ -196,6 +249,14 @@ function handleCanTap(flavorId) {
                 render();
             }, 120);
         }
+    } else {
+        playWrongSound();
+        state.shakeId = flavorId;
+        render();
+        setTimeout(() => {
+            state.shakeId = null;
+            render();
+        }, 300);
     }
 }
 
@@ -233,7 +294,7 @@ function stopTimers() {
  */
 function render() {
     const root = document.getElementById('root');
-    const { view, difficulty, score, timeLeft, target, activeSet, hitId, easyTimeTaken, hardTimeTaken, isCountingDown, countdownValue } = state;
+    const { view, difficulty, score, timeLeft, target, activeSet, hitId, shakeId, easyTimeTaken, hardTimeTaken, isCountingDown, countdownValue } = state;
 
     /**
      * --- PAGE: HOME ---
@@ -338,6 +399,15 @@ function render() {
      */
     if (view === 'play') {
         root.innerHTML = `
+        <style>
+            @keyframes can-shake {
+                0% { transform: translateX(0); }
+                25% { transform: translateX(-10px) rotate(-5deg); }
+                50% { transform: translateX(10px) rotate(5deg); }
+                75% { transform: translateX(-10px) rotate(-5deg); }
+                100% { transform: translateX(0); }
+            }
+        </style>
         <div style="flex:1; display:flex; flex-direction:column; z-index:10; padding:60px 60px 40px;">
           <div style="display:flex; justify-content:space-between; align-items:flex-start;">
             <div style="margin-left:40px;">
@@ -366,7 +436,7 @@ function render() {
             `}
           </div>
           <div style="flex:1; display:grid; grid-template-columns:repeat(3, 1fr); gap:${difficulty === 'easy' ? 40 : 20}px; align-content:center; justify-items:center;">
-            ${activeSet.map(f => getCanHTML(f, difficulty === 'easy' ? 190 : 140, 0, target?.id === f.id, hitId === f.id)).join('')}
+            ${activeSet.map(f => getCanHTML(f, difficulty === 'easy' ? 190 : 140, 0, target?.id === f.id, hitId === f.id, shakeId === f.id)).join('')}
           </div>
         </div>`;
     }
@@ -479,6 +549,7 @@ function render() {
  * NAVIGATION / INITIALIZATION
  */
 function goToHome() {
+    playMenuSound();
     stopTimers();
     state.view = 'home';
     state.difficulty = 'easy';
@@ -497,13 +568,6 @@ function handleResize() {
     const scale = Math.min(scaleX, scaleY);
     
     viewport.style.transform = `scale(${scale})`;
-}
-
-function showCertificate() {
-    // Generates a random 4-digit number between 1000 and 9999
-    state.certificateId = Math.floor(1000 + Math.random() * 9000);
-    state.view = 'certificate';
-    render();
 }
 
 window.addEventListener('resize', handleResize);
