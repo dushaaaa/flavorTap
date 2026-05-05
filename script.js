@@ -244,7 +244,7 @@ function render() {
         
         root.innerHTML = `
         <div style="flex:1; display:flex; flex-direction:column; align-items:center; padding:120px 80px 100px; z-index:10;">
-          <div style="display:flex; gap:6px; margin-bottom:32px;">
+          <div style="padding:10px 24px; border:2px solid rgba(26,18,8,0.15); border-radius:100px;display:flex; gap:6px; margin-bottom:64px;">
             <span style="color:#ff5b3a; font-weight:800; font-size:28px; letter-spacing:0.4em;">TAP</span>            
             <span style="color:#ff5b3a; font-weight:800; font-size:28px; letter-spacing:0.4em; padding-left:8px;">THE FLAVOR</span>
           </div>
@@ -270,16 +270,16 @@ function render() {
     if (view === 'instructions') {
         root.innerHTML = `
         <div style="flex:1; display:flex; flex-direction:column; align-items:center; padding:120px 80px 100px; z-index:10;">
-          <div style="color:#ff5b3a; font-weight:800; font-size:28px; letter-spacing:0.4em; margin-bottom:32px;">TWO ROUNDS</div>
+          <div style="padding:10px 24px; border:2px solid rgba(26,18,8,0.15); border-radius:100px; color:#ff5b3a; font-weight:800; font-size:28px; letter-spacing:0.4em; margin-bottom:64px;">TWO ROUNDS</div>
           <h1 style="font-family:'Fraunces', serif; font-weight:900; font-style:italic; font-size:180px; color:#1a1208; line-height:0.9; margin:0; text-align:center;">
             Easy,<br/>then <span style="color:#ff5b3a;">Hard.</span>
           </h1>
 
           <div style="font-size:32px; margin-top:60px; opacity:0.7; max-width:720px; line-height:1.4; text-align:center; color:#1a1208;">
-              Clear five cans in round one. Then twelve cans, faster, in round two.
+              Clear eight cans in round one. Then twelve cans, faster, in round two.
           </div>
 
-          <div style="width: 100%; height: 1px; background: rgba(26,18,8,0.1); margin: 80px 0;"></div>
+          <div style="width: 100%; height: 1px; background: rgba(26,18,8,0.1); margin: 20px 0;"></div>
 
           <div style="display:flex; width:100%; justify-content:space-between; text-align:center; padding: 0 40px;">
             <div>
@@ -298,16 +298,16 @@ function render() {
             </div>
           </div>
 
-          <div style="width: 100%; height: 1px; background: rgba(26,18,8,0.1); margin: 80px 0;"></div>
+          <div style="width: 100%; height: 1px; background: rgba(26,18,8,0.1); margin: 20px 0;"></div>
 
           <div style="width: 100%; text-align:center;">
-             <div style="font-size:24px; letter-spacing:0.3em; font-weight:800; opacity:0.5; margin-bottom:50px;">HOW TO PLAY</div>
-             <div style="display:flex; flex-direction:column; gap:60px; align-items:flex-start; padding: 0 60px;">
+             <div style="font-size:24px; letter-spacing:0.3em; font-weight:800; opacity:0.5; margin-top:50px; margin-bottom:30px;">HOW TO PLAY</div>
+             <div style="display:flex; flex-direction:column; gap:40px; align-items:flex-start; padding: 0 60px;">
                 <div style="display:flex; gap:30px; align-items:flex-start; text-align:left;">
                    <div style="font-size:110px; font-weight:900; font-family:'Fraunces', serif; color:#ff5b3a; font-style:italic; line-height:0.8;">1</div>
                    <div>
                       <div style="font-size:60px; font-weight:900; font-family:'Fraunces', serif; font-style:italic;">Listen.</div>
-                      <div style="font-size:28px; opacity:0.6; margin-top:10px;">A flavor name will be called out — by voice, on screen, in coral.</div>
+                      <div style="font-size:28px; opacity:0.6; margin-top:10px;">A flavor name will be called out: by voice, on screen, in coral.</div>
                    </div>
                 </div>
                 <div style="display:flex; gap:30px; align-items:flex-start; text-align:left;">
@@ -340,7 +340,7 @@ function render() {
         root.innerHTML = `
         <div style="flex:1; display:flex; flex-direction:column; z-index:10; padding:60px 60px 40px;">
           <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-            <div>
+            <div style="margin-left:40px;">
               <div style="font-size:24px; font-weight:800; opacity:0.5; letter-spacing:0.3em;">SCORE</div>
               <div style="font-size:130px; font-weight:900; font-family:'Fraunces', serif; font-style:italic; line-height:1;">${score} <span style="font-size:50px; opacity:0.3;">/ 5</span></div>
             </div>
@@ -349,7 +349,7 @@ function render() {
                 <div style="padding:10px 24px; border:2px solid rgba(26,18,8,0.15); border-radius:100px; font-size:24px; font-weight:800; letter-spacing:0.1em; color:#1a1208; opacity:0.8;">${difficulty === 'easy' ? 'ROUND 1' : 'ROUND 2'}</div>
             </div>
 
-            <div style="text-align:right;">
+            <div style="text-align:right; margin-right:40px;">
               <div style="font-size:24px; font-weight:800; opacity:0.5; letter-spacing:0.3em;">TIME</div>
               <div style="font-size:130px; font-weight:900; font-style:italic; font-family:'Fraunces', serif; line-height:1;">${timeLeft}s</div>
             </div>
@@ -381,7 +381,7 @@ function render() {
           ${isWin ? getConfettiHTML() : ''}
           
 
-          <div style="font-size:32px; font-weight:800; color:${isWin ? '#ff5b3a' : '#1a1208'}; letter-spacing:0.3em; margin-bottom:20px;">${isWin ? '5 / 5 CORRECT' : 'TIME UP'}</div>
+          <div style="padding:10px 24px; border:2px solid rgba(26,18,8,0.15); border-radius:100px; font-size:32px; font-weight:800; color:${isWin ? '#ff5b3a' : '#1a1208'}; letter-spacing:0.3em; margin-bottom:48px;">${isWin ? '5 / 5 CORRECT' : 'TIME IS UP'}</div>
           <h1 style="font-family:'Fraunces', serif; font-weight:900; font-style:italic; font-size:180px; color:#1a1208; line-height:0.9; margin:0;">${isWin ? 'Nailed' : 'Almost'}<br/><span style="color:#ff5b3a;">${isWin ? 'all five.' : 'got it.'}</span></h1>
           
           ${isWin ? `
@@ -404,7 +404,7 @@ function render() {
               <div style="margin:60px 0;">
                 <div style="font-size:32px; font-weight:700; opacity:0.5; letter-spacing:0.2em; margin-bottom:20px;">YOU GOT</div>
                 <div style="font-size:180px; font-weight:900; font-style:italic; font-family:'Fraunces', serif; color:#1a1208; line-height:1;">${score}<span style="color:#aaa; margin-left:10px;">/ 5</span></div>
-                <div style="font-size:32px; opacity:0.7; margin-top:40px; max-width:600px;">One more round. Trust your ears this time.</div>
+                <div style="font-size:32px; opacity:0.7; margin-top:40px; max-width:600px;">You’re getting closer. Trust your ears this time.</div>
                 <div style="margin-top:60px; display:flex; justify-content:center;">${getCanHTML(FLAVORS.find(f => f.id === 'grape'), 240, 10)}</div>
               </div>
           `}
@@ -425,7 +425,7 @@ function render() {
         root.innerHTML = `
         <div style="flex:1; display:flex; flex-direction:column; align-items:center; padding:120px 60px; z-index:10; text-align:center;">
           ${getConfettiHTML()}
-          <div style="color:#ff5b3a; font-weight:800; font-size:28px; letter-spacing:0.4em; margin-bottom:20px;">CONGRATULATIONS</div>
+          <div style="padding:10px 24px; border:2px solid rgba(26,18,8,0.15); border-radius:100px; color:#ff5b3a; font-weight:800; font-size:28px; letter-spacing:0.4em; margin-bottom:60px;">CONGRATULATIONS</div>
           <h1 style="font-family:'Fraunces', serif; font-weight:900; font-style:italic; font-size:140px; color:#1a1208; line-height:0.9; margin:0;">
              You're a<br/><span style="color:#ff5b3a;">Master Tapper.</span>
           </h1>
@@ -459,8 +459,12 @@ function render() {
             </div>
             
             <div style="position:absolute; bottom:40px; right:40px; text-align:right;">
-               <div style="font-size:14px; font-weight:800; opacity:0.3;">ID: #FT-8892</div>
-               <div style="font-size:14px; font-weight:800; opacity:0.3;">${new Date().toLocaleDateString()}</div>
+                <div style="font-size:14px; font-weight:800; opacity:0.3;">
+                    ID: #FT-${state.certificateId}
+                </div>
+                <div style="font-size:14px; font-weight:800; opacity:0.3;">
+                    ${new Date().toLocaleDateString()}
+                </div>
             </div>
           </div>
 
@@ -493,6 +497,13 @@ function handleResize() {
     const scale = Math.min(scaleX, scaleY);
     
     viewport.style.transform = `scale(${scale})`;
+}
+
+function showCertificate() {
+    // Generates a random 4-digit number between 1000 and 9999
+    state.certificateId = Math.floor(1000 + Math.random() * 9000);
+    state.view = 'certificate';
+    render();
 }
 
 window.addEventListener('resize', handleResize);
