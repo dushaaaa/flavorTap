@@ -53,6 +53,18 @@ let targetSwitcher = null;
  */
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
+// "Priming" function for mobile browsers to allow sound & speech
+function unlockAudio() {
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+    // Mobile browsers require a direct user-initiated speech call to "unlock" future automated speech
+    if (window.speechSynthesis) {
+        const silentUtterance = new SpeechSynthesisUtterance('');
+        window.speechSynthesis.speak(silentUtterance);
+    }
+}
+
 function playTone(freq, type, duration, volume) {
     if (audioCtx.state === 'suspended') audioCtx.resume();
     const osc = audioCtx.createOscillator();
@@ -156,6 +168,7 @@ function getCanHTML(flavor, width = 150, tilt = 0, glow = false, isActive = fals
  * Controls for starting games, handling taps, and timers.
  */
 function showInstructions() {
+    unlockAudio();
     playMenuSound();
     state.view = 'instructions';
     render();
@@ -196,6 +209,7 @@ function runCountdown(callback) {
 }
 
 function startGame() {
+    unlockAudio();
     playMenuSound();
     const count = state.difficulty === 'easy' ? 9 : 12;
     state.activeSet = [...FLAVORS].sort(() => 0.5 - Math.random()).slice(0, count);
@@ -212,6 +226,7 @@ function startGame() {
 }
 
 function startNextRound() {
+    unlockAudio();
     playMenuSound();
     state.difficulty = 'hard';
     startGame();
