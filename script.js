@@ -610,19 +610,9 @@ document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: fal
 handleResize();
 render();
 
-// Offline Support Registration (Prevents the "Dino" screen on refresh)
+// Fixed Service Worker Registration for Vercel
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        const swSource = `
-            const cacheName = 'flavor-tap-cache-v1';
-            self.addEventListener('install', e => {
-                e.waitUntil(caches.open(cacheName).then(cache => cache.addAll(['./', window.location.href])));
-            });
-            self.addEventListener('fetch', e => {
-                e.respondWith(caches.match(e.request).then(res => res || fetch(e.request)));
-            });
-        `;
-        const blob = new Blob([swSource], { type: 'text/javascript' });
-        navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
     });
 }
