@@ -49,32 +49,51 @@ let gameTimer = null;
 let targetSwitcher = null;
 
 /**
- * AUDIO SYNTHESIS (Offline Ready)
+ * AUDIO SYNTHESIS (Updated for Mobile Stability)
  */
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+let audioCtx = null;
 
-// "Priming" function for mobile browsers to allow sound & speech
+function initAudioContext() {
+    if (audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+
 function unlockAudio() {
+    initAudioContext();
     if (audioCtx.state === 'suspended') {
         audioCtx.resume();
     }
-    // Mobile browsers require a direct user-initiated speech call to "unlock" future automated speech
+    // Play a tiny silent buffer to force-start the hardware (Required for iOS)
+    const buffer = audioCtx.createBuffer(1, 1, 22050);
+    const source = audioCtx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioCtx.destination);
+    source.start(0);
+
+    // Warm up the Speech engine with a silent utterance
     if (window.speechSynthesis) {
-        const silentUtterance = new SpeechSynthesisUtterance('');
-        window.speechSynthesis.speak(silentUtterance);
+        const silent = new SpeechSynthesisUtterance(' ');
+        silent.volume = 0;
+        window.speechSynthesis.speak(silent);
     }
 }
 
 function playTone(freq, type, duration, volume) {
+    if (!audioCtx) initAudioContext();
     if (audioCtx.state === 'suspended') audioCtx.resume();
+    
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
+    
     osc.type = type;
     osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    
     gain.gain.setValueAtTime(volume, audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+    
     osc.connect(gain);
     gain.connect(audioCtx.destination);
+    
     osc.start();
     osc.stop(audioCtx.currentTime + duration);
 }
@@ -84,7 +103,6 @@ function playMenuSound() {
 }
 
 function playCelebrateSound() {
-    // A quick synthesized fanfare: C5, E5, G5, C6
     const notes = [523.25, 659.25, 783.99, 1046.50];
     notes.forEach((freq, i) => {
         setTimeout(() => playTone(freq, 'sine', 0.5, 0.08), i * 100);
@@ -109,11 +127,14 @@ function announce(name) {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     
+    // On mobile, the utterance must be created immediately
+    const utterance = new SpeechSynthesisUtterance(name);
+    utterance.rate = 1.1;
+    
+    // Tiny delay to ensure the cancel() above finishes
     setTimeout(() => {
-        const utterance = new SpeechSynthesisUtterance(name);
-        utterance.rate = 1.1;
         window.speechSynthesis.speak(utterance);
-    }, 50);
+    }, 20);
 }
 
 /**
@@ -242,6 +263,9 @@ function showCertificate() {
 function handleCanTap(flavorId) {
     if (state.view !== 'play' || state.isCountingDown) return;
     
+    // Ensure context is running on every tap
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+
     if (flavorId === state.target.id) {
         playCorrectSound();
         state.hitId = flavorId;
