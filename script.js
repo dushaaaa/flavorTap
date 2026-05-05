@@ -63,14 +63,12 @@ function unlockAudio() {
     if (audioCtx.state === 'suspended') {
         audioCtx.resume();
     }
-    // Play a tiny silent buffer to force-start the hardware (Required for iOS)
     const buffer = audioCtx.createBuffer(1, 1, 22050);
     const source = audioCtx.createBufferSource();
     source.buffer = buffer;
     source.connect(audioCtx.destination);
     source.start(0);
 
-    // Warm up the Speech engine with a silent utterance
     if (window.speechSynthesis) {
         const silent = new SpeechSynthesisUtterance(' ');
         silent.volume = 0;
@@ -127,11 +125,9 @@ function announce(name) {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     
-    // On mobile, the utterance must be created immediately
     const utterance = new SpeechSynthesisUtterance(name);
     utterance.rate = 1.1;
     
-    // Tiny delay to ensure the cancel() above finishes
     setTimeout(() => {
         window.speechSynthesis.speak(utterance);
     }, 20);
@@ -262,8 +258,6 @@ function showCertificate() {
 
 function handleCanTap(flavorId) {
     if (state.view !== 'play' || state.isCountingDown) return;
-    
-    // Ensure context is running on every tap
     if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
 
     if (flavorId === state.target.id) {
@@ -615,3 +609,20 @@ document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: fal
 // Bootup
 handleResize();
 render();
+
+// Offline Support Registration (Prevents the "Dino" screen on refresh)
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        const swSource = `
+            const cacheName = 'flavor-tap-cache-v1';
+            self.addEventListener('install', e => {
+                e.waitUntil(caches.open(cacheName).then(cache => cache.addAll(['./', window.location.href])));
+            });
+            self.addEventListener('fetch', e => {
+                e.respondWith(caches.match(e.request).then(res => res || fetch(e.request)));
+            });
+        `;
+        const blob = new Blob([swSource], { type: 'text/javascript' });
+        navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
+    });
+}
