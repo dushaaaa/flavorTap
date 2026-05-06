@@ -6,7 +6,7 @@ Flavor Tap is a fast-paced web game where players identify soda flavors through 
 ---
 
 ## Live Demo  
-https://your-vercel-link-here.vercel.app  
+https://flavor-tap.vercel.app/
 
 ---
 
